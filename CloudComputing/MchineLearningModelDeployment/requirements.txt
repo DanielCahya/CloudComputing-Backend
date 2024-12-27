@@ -1,0 +1,8 @@
+Flask
+numpy
+pandas
+scikit-learn
+tensorflow
+xgboost
+joblib
+google-cloud-storage

@@ -24,7 +24,7 @@ const addPredictionHandler = async (req, res) => {
     const { username } = decoded;
 
     // Validasi input body
-    const { age, gender, bmi, smoking, alcoholConsumption, physicalActivity, dietQuality, sleepQuality, familyHistoryDiabetes, gestationalDiabetes, previousPreDiabetes, hypertension, systolicBP, diastolicBP, fastingBloodSugar, hbA1c, cholesterolTotal, antihypertensiveMedications, antidiabeticMedications, frequentUrination, excessiveThirst, unexplainedWeightLoss, fatigueLevels, blurredVision, slowHealingSores, tinglingHandsFeet, qualityOfLifeScore, heavyMetalsExposure, occupationalExposureChemicals, waterQuality, medicalCheckupsFrequency, medicationAdherence, healthLiteracy, } = req.body;
+    const { age, gender, bmi, smoking, alcoholConsumption, physicalActivity, dietQuality, sleepQuality, familyHistoryDiabetes, gestationalDiabetes, previousPreDiabetes, hypertension, systolicBP, diastolicBP, fastingBloodSugar, hbA1c, cholesterolTotal, antihypertensiveMedications, antidiabeticMedications, frequentUrination, excessiveThirst, unexplainedWeightLoss, fatigueLevels, blurredVision, slowHealingSores, tinglingHandsFeet, qualityOfLifeScore, heavyMetalsExposure, occupationalExposureChemicals, waterQuality, medicalCheckupsFrequency, medicationAdherence, healthLiteracy } = req.body;
     const requiredFields = [age, gender, bmi, smoking, alcoholConsumption, physicalActivity, dietQuality, sleepQuality, familyHistoryDiabetes, gestationalDiabetes, previousPreDiabetes, hypertension, systolicBP, diastolicBP, fastingBloodSugar, hbA1c, cholesterolTotal, antihypertensiveMedications, antidiabeticMedications, frequentUrination, excessiveThirst, unexplainedWeightLoss, fatigueLevels, blurredVision, slowHealingSores, tinglingHandsFeet, qualityOfLifeScore, heavyMetalsExposure, occupationalExposureChemicals, waterQuality, medicalCheckupsFrequency, medicationAdherence, healthLiteracy];
     
     // Cek apakah semua field telah terisi
@@ -35,11 +35,17 @@ const addPredictionHandler = async (req, res) => {
       });
     }
 
-    // Panggil API untuk prediksi
-    const { data: { prediction } } = await axios.post(
-      'https://diabetes-risk-model-893955223741.asia-southeast2.run.app/predict',
+    // Panggil API Flask untuk prediksi
+    const flaskResponse = await axios.post(
+      'https://model-893955223741.asia-southeast2.run.app/predict',
       { age, gender, bmi, smoking, alcoholConsumption, physicalActivity, dietQuality, sleepQuality, familyHistoryDiabetes, gestationalDiabetes, previousPreDiabetes, hypertension, systolicBP, diastolicBP, fastingBloodSugar, hbA1c, cholesterolTotal, antihypertensiveMedications, antidiabeticMedications, frequentUrination, excessiveThirst, unexplainedWeightLoss, fatigueLevels, blurredVision, slowHealingSores, tinglingHandsFeet, qualityOfLifeScore, heavyMetalsExposure, occupationalExposureChemicals, waterQuality, medicalCheckupsFrequency, medicationAdherence, healthLiteracy }
     );
+
+    // Log the response for debugging purposes
+    console.log('Flask response:', flaskResponse.data);
+
+    // Extract risk_score and classification from the response
+    const { risk_score, classification } = flaskResponse.data;
 
     // Ambil referensi pengguna dari Firestore
     const userRef = firestore.collection("users").doc(username);
@@ -58,9 +64,11 @@ const addPredictionHandler = async (req, res) => {
     // Buat prediksi baru
     const newPrediction = {
       id: `prediction-${Date.now()}`, // ID unik prediksi
-      predictionResult: prediction,
-      predictionDetails: { age, gender, bmi, smoking, alcoholConsumption, physicalActivity, dietQuality, sleepQuality, familyHistoryDiabetes, gestationalDiabetes, previousPreDiabetes, hypertension, systolicBP, diastolicBP, fastingBloodSugar, hbA1c, cholesterolTotal, antihypertensiveMedications, antidiabeticMedications, frequentUrination, excessiveThirst, unexplainedWeightLoss, fatigueLevels, blurredVision, slowHealingSores, tinglingHandsFeet, qualityOfLifeScore, heavyMetalsExposure, occupationalExposureChemicals, waterQuality, medicalCheckupsFrequency, medicationAdherence, healthLiteracy },
-      predictionSuggestion: prediction === 'Yes' ? 'Risky' : 'Not risky',
+      riskScore: risk_score,  // Menyimpan risk_score dari response Flask
+      classification,         // Menyimpan classification (Risky/Not Risky)
+      predictionDetails: { 
+        age, gender, bmi, smoking, alcoholConsumption, physicalActivity, dietQuality, sleepQuality, familyHistoryDiabetes, gestationalDiabetes, previousPreDiabetes, hypertension, systolicBP, diastolicBP, fastingBloodSugar, hbA1c, cholesterolTotal, antihypertensiveMedications, antidiabeticMedications, frequentUrination, excessiveThirst, unexplainedWeightLoss, fatigueLevels, blurredVision, slowHealingSores, tinglingHandsFeet, qualityOfLifeScore, heavyMetalsExposure, occupationalExposureChemicals, waterQuality, medicalCheckupsFrequency, medicationAdherence, healthLiteracy 
+      },
       createdAt: new Date().toISOString(),
     };
 

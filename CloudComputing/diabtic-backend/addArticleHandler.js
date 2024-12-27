@@ -41,19 +41,16 @@ const addArticleHandler = async (req, res) => {
       });
     }
 
-    // Pastikan description berisi banyak paragraf yang dipisahkan dengan \n
-    const formattedDescription = description.split('\n').join('<br/>'); // Bisa gunakan <br> jika ingin merender HTML
-
     // Referensi ke koleksi "articles"
     const articleRef = firestore.collection('articles');
 
     // Data artikel yang akan ditambahkan
     const newArticle = {
       title,
-      description: formattedDescription, // Menyimpan dengan format HTML atau string paragraf
+      description, // Simpan deskripsi dengan \n sebagai pemisah paragraf
       image,
       createdDate: Firestore.Timestamp.now(), // Gunakan timestamp sekarang
-      author, // Author dimasukkan secara manual dari body
+      author,
     };
 
     // Tambahkan artikel baru
